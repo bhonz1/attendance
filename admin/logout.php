@@ -1,5 +1,5 @@
 <?php
 require_once __DIR__ . "/../lib/admin.php";
 admin_logout();
-header("Location: /index.php");
-exit;
+require_once __DIR__ . "/../lib/roles.php";
+http_redirect("/index.php");

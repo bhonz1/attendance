@@ -2,6 +2,7 @@
 require_once __DIR__ . "/../lib/auth.php";
 require_once __DIR__ . "/../lib/supabase.php";
 require_once __DIR__ . "/../lib/csrf.php";
+require_once __DIR__ . "/../lib/urlref.php";
 require_teacher_session();
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 $name = $_SESSION["teacher_name"] ?? "Teacher";
@@ -10,8 +11,21 @@ $tid = $_SESSION["teacher_id"] ?? null;
 $alert = null;
 if (isset($_SESSION["__add_student_alert"]) && is_array($_SESSION["__add_student_alert"])) { $alert = $_SESSION["__add_student_alert"]; unset($_SESSION["__add_student_alert"]); }
 $cid = $_GET["class"] ?? ($_GET["id"] ?? "");
+$cid = is_string($cid) ? preg_replace('/[^0-9]/', '', $cid) : $cid;
 $next = $_GET["return"] ?? "";
-$defaultNext = "/teacher/classes.php?class=" . urlencode((string)$cid);
+$refTok = $_GET["ref"] ?? "";
+$defaultNextTok = url_ref_create(["class"=>(string)$cid]);
+$defaultNext = "/teacher/classes.php?ref=" . $defaultNextTok;
+if ($refTok !== "") {
+  $ref = url_ref_consume($refTok);
+  if (is_array($ref)) {
+    $toClass = $ref["class"] ?? null;
+    if ($toClass !== null) {
+      $cid = is_string($toClass) ? preg_replace('/[^0-9]/', '', $toClass) : $toClass;
+      $defaultNext = "/teacher/classes.php?class=" . urlencode((string)$cid);
+    }
+  }
+}
 if (!is_string($next) || $next === "" || strpos($next, "/") !== 0) { $next = $defaultNext; }
 $classRec = null;
 if ($cid !== "" && $useSb) {
@@ -147,8 +161,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           $alert = ["type"=>"danger","text"=>"Add failed"];
         } else {
           $_SESSION["__add_student_alert"] = ["type"=>"success","text"=>"Student(s) added to class"];
-          header("Location: " . $next);
-          exit;
+          require_once __DIR__ . "/../lib/roles.php";
+          http_redirect($next);
         }
       } else {
         if (!isset($_SESSION["__class_students"]) || !is_array($_SESSION["__class_students"])) $_SESSION["__class_students"] = [];
@@ -163,8 +177,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           }
         }
         $_SESSION["__add_student_alert"] = ["type"=>"success","text"=>"Student(s) added to class"];
-        header("Location: " . $next);
-        exit;
+        require_once __DIR__ . "/../lib/roles.php";
+        http_redirect($next);
       }
     } else {
       $alert = ["type"=>"warning","text"=>"No valid students selected."];

@@ -1,0 +1,36 @@
+RewriteEngine On
+Options -Indexes
+
+RewriteRule ^lib/ - [F]
+RewriteRule (^|/)\. - [F]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+RewriteRule ^$ index.php [L,QSA]
+RewriteRule ^index$ index.php [L,QSA]
+RewriteRule ^student$ student.php [L,QSA]
+
+RewriteRule ^teacher/login$ teacher/login.php [L,QSA]
+RewriteRule ^teacher/logout$ teacher/logout.php [L,QSA]
+RewriteRule ^teacher/dashboard$ teacher/dashboard.php [L,QSA]
+RewriteRule ^teacher/classes$ teacher/classes.php [L,QSA]
+RewriteRule ^teacher/attendance$ teacher/attendance.php [L,QSA]
+RewriteRule ^teacher/add-student$ teacher/add_student.php [L,QSA]
+RewriteRule ^teacher/view-student$ teacher/view_student.php [L,QSA]
+
+RewriteRule ^teacher/classes/ref/([A-Za-z0-9]+)$ teacher/classes.php?ref=$1 [L,QSA]
+RewriteRule ^teacher/attendance/ref/([A-Za-z0-9]+)$ teacher/attendance.php?ref=$1 [L,QSA]
+RewriteRule ^teacher/add-student/ref/([A-Za-z0-9]+)$ teacher/add_student.php?ref=$1 [L,QSA]
+
+RewriteRule ^admin/login$ admin/login.php [L,QSA]
+RewriteRule ^admin/logout$ admin/logout.php [L,QSA]
+RewriteRule ^admin/dashboard$ admin/dashboard.php [L,QSA]
+RewriteRule ^admin/teacher$ admin/teacher.php [L,QSA]
+RewriteRule ^admin/view-teacher$ admin/view_teacher.php [L,QSA]
+RewriteRule ^admin/view-teacher/ref/([A-Za-z0-9]+)$ admin/view_teacher.php?ref=$1 [L,QSA]
+
+RewriteRule ^superadmin/dashboard$ superadmin/dashboard.php [L,QSA]
+RewriteRule ^superadmin/users$ superadmin/users.php [L,QSA]
+RewriteRule ^superadmin/logs$ superadmin/logs.php [L,QSA]

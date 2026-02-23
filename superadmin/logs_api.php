@@ -39,6 +39,12 @@ function audit_access($actor, $action){
     $_SESSION["__sys_logs_access"][] = $rec;
   }
 }
+function safe_regex($q){
+  $q = (string)$q;
+  if ($q === "" || strlen($q) > 128) return null;
+  $q = str_replace("#", "\\#", $q);
+  return "#" . $q . "#i";
+}
 function matches($e, $f){
   if (($f["severity"] ?? "") !== "" && ($e["severity"] ?? "") !== $f["severity"]) return false;
   if (($f["role"] ?? "") !== "" && (string)($e["user_role"] ?? "") !== (string)$f["role"]) return false;
@@ -56,8 +62,10 @@ function matches($e, $f){
   if ($q !== "") {
     $hay = json_encode($e);
     if (($f["regex"] ?? "0") === "1") {
+      $rx = safe_regex($q);
+      if ($rx === null) return false;
       set_error_handler(function(){});
-      $m = @preg_match("/$q/i", $hay);
+      $m = @preg_match($rx, $hay);
       restore_error_handler();
       if ($m !== 1) return false;
     } else {
@@ -128,7 +136,9 @@ if ($op === "list") {
 } else if ($op === "export") {
   ensure_store();
   $type = $_GET["type"] ?? "csv";
-  $fields = isset($_GET["fields"]) ? explode(",", $_GET["fields"]) : ["timestamp","user_id","user_role","action","resource","ip","user_agent","session_id","response_status","severity"];
+  $allowedFields = ["id","timestamp","user_id","user_role","action","resource","ip","user_agent","session_id","response_status","severity","actor"];
+  $fields = isset($_GET["fields"]) ? array_values(array_filter(array_map("trim", explode(",", $_GET["fields"])), function($f) use ($allowedFields){ return in_array($f, $allowedFields, true); })) : ["timestamp","user_id","user_role","action","resource","ip","user_agent","session_id","response_status","severity"];
+  if (count($fields) === 0) $fields = ["timestamp","user_id","user_role","action","resource","ip","user_agent","session_id","response_status","severity"];
   $items = $_SESSION["__sys_logs"];
   if ($useSb) {
     $items = sb_get("system_logs", ["select"=>implode(",", $fields),"limit"=>1000]) ?: [];

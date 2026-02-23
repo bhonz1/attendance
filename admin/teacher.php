@@ -1,10 +1,12 @@
 <?php
 require_once __DIR__ . "/../lib/admin.php";
 require_once __DIR__ . "/../lib/supabase.php";
+require_once __DIR__ . "/../lib/csrf.php";
 require_admin_session();
 $msg = null; $err = null; $msgReg = null; $errReg = null;
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 $useSupabase = sb_url() ? true : false;
+$csrf_token = csrf_token();
 $__ROLE_TEACHER = 2;
 $__did_bootstrap_authno = false;
 if ($useSupabase && !$__did_bootstrap_authno) {
@@ -21,6 +23,9 @@ if (!is_array($institutions)) $institutions = [];
 $teacherRecords = $useSupabase ? sb_get("teacher_registry", ["select" => "*", "order" => "id.desc"]) : ($_SESSION["__teacher_registry"] ?? []);
 if (!is_array($teacherRecords)) $teacherRecords = [];
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["reg_action"])) {
+  if (!csrf_validate($_POST["csrf"] ?? "")) {
+    $errReg = "Invalid form submission.";
+  } else {
   $act = $_POST["reg_action"];
   if ($act === "create") {
     $code = trim($_POST["code"] ?? "");
@@ -240,6 +245,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["reg_action"])) {
       }
     }
   }
+  }
   $teacherRecords = $useSupabase ? sb_get("teacher_registry", ["select" => "*", "order" => "id.desc"]) : ($_SESSION["__teacher_registry"] ?? []);
   if (!is_array($teacherRecords)) $teacherRecords = [];
 }
@@ -316,7 +322,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["reg_action"])) {
   <td><?= htmlspecialchars($row["full_name"] ?? "") ?></td>
   <td>
     <div class="d-flex gap-2">
-      <a class="btn btn-sm btn-view" href="/admin/view_teacher.php?id=<?= $rid ?>">View</a>
+      <?php require_once __DIR__ . "/../lib/urlref.php"; $vtok = url_ref_create(["id"=>$rid]); ?>
+      <a class="btn btn-sm btn-view" href="/admin/view_teacher.php?ref=<?= htmlspecialchars($vtok) ?>">View</a>
       <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#trEditModal_<?= $rid ?>">Edit</button>
       <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#trDeleteModal_<?= $rid ?>">Delete</button>
     </div>
@@ -342,6 +349,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["reg_action"])) {
       <div class="modal-header"><h5 class="modal-title">Edit Teacher Record</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
         <form id="trEditForm_<?= $rid ?>" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
           <input type="hidden" name="reg_action" value="update">
           <input type="hidden" name="id" value="<?= $rid ?>">
           <div class="row g-3">
@@ -410,6 +418,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["reg_action"])) {
       <div class="modal-header"><h5 class="modal-title">Delete Teacher Record</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
         <form id="trDeleteForm_<?= $rid ?>" method="post">
+          <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
           <input type="hidden" name="reg_action" value="delete">
           <input type="hidden" name="id" value="<?= $rid ?>">
           <p class="mb-0">Are you sure you want to delete this teacher record?</p>
@@ -429,6 +438,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["reg_action"])) {
       <div class="modal-header"><h5 class="modal-title">Add Teacher Record</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
         <form id="trCreateForm" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
           <input type="hidden" name="reg_action" value="create">
           <div class="row g-3">
             <div class="col-12 col-md-4"><label class="form-label">Teacher Code</label><input type="text" name="code" class="form-control" required></div>

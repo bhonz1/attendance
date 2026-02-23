@@ -44,6 +44,7 @@ function admin_login($u, $p) {
       return ["ok" => false, "error" => "Unauthorized"];
     }
     if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+    session_regenerate_id(true);
     $_SESSION["admin"] = true;
     $_SESSION["admin_user"] = $eu;
     set_auth_id(admin_role_id());
@@ -153,6 +154,7 @@ function admin_login($u, $p) {
     }
     return ["ok"=>false,"error"=>"Unauthorized"];
   }
+  session_regenerate_id(true);
   $_SESSION["admin"] = true;
   $_SESSION["admin_user"] = $u;
   if (isset($rec["id"])) $_SESSION["admin_user_id"] = (int)$rec["id"];

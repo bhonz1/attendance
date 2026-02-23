@@ -15,6 +15,26 @@ if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 $op = $_GET["op"] ?? $_POST["op"] ?? "";
 function json_out($d){ echo json_encode($d); if (!UNIT_TEST) exit; }
 function random_secret(){ return bin2hex(random_bytes(16)); }
+function current_admin_user_id($useSb) {
+  if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+  if (isset($_SESSION["admin_user_id"])) return (int)$_SESSION["admin_user_id"];
+  $un = $_SESSION["admin_user"] ?? "";
+  if ($un === "") return null;
+  if ($useSb) {
+    $rows = sb_get("users", ["select"=>"id", "username"=>"eq.".$un, "limit"=>1]);
+    if (is_array($rows) && isset($rows[0]["id"])) return (int)$rows[0]["id"];
+  } else {
+    if (!isset($_SESSION["__users"]) || !is_array($_SESSION["__users"])) return null;
+    foreach ($_SESSION["__users"] as $u) { if (($u["username"] ?? "") === $un) return (int)($u["id"] ?? 0); }
+  }
+  return null;
+}
+function can_target_admin($id, $useSb) {
+  $rid = get_auth_id();
+  if ($rid !== null && $rid === ROLE_SUPERADMIN) return true;
+  $cur = current_admin_user_id($useSb);
+  return $cur !== null && (int)$cur === (int)$id;
+}
 function captcha_pw_issue() {
   if (!isset($_SESSION["__captcha_pw_change"]) || !is_array($_SESSION["__captcha_pw_change"])) $_SESSION["__captcha_pw_change"] = [];
   $a = random_int(1, 9);
@@ -39,6 +59,7 @@ if ($op === "change_password") {
   $ct = $_POST["captcha_token"] ?? "";
   $ca = $_POST["captcha_answer"] ?? "";
   if ($id <= 0 || strlen($old) < 1 || strlen($password) < 6) json_out(["ok"=>false,"error"=>"Invalid data"]);
+  if (!can_target_admin($id, $useSb)) json_out(["ok"=>false,"error"=>"Unauthorized"]);
   if (!captcha_pw_validate($ct,$ca)) json_out(["ok"=>false,"error"=>"Invalid verification"]);
   $rec = null;
   if ($useSb) {
@@ -74,6 +95,7 @@ if ($op === "change_password") {
 } else if ($op === "setup_2fa") {
   $id = (int)($_POST["id"] ?? 0);
   if ($id <= 0) json_out(["ok"=>false,"error"=>"Invalid id"]);
+  if (!can_target_admin($id, $useSb)) json_out(["ok"=>false,"error"=>"Unauthorized"]);
   $secret = random_secret();
   if ($useSb) {
     $r = sb_patch("users", ["two_factor_enabled"=>true, "two_factor_secret"=>$secret], ["id"=>"eq.".$id]);
@@ -86,6 +108,7 @@ if ($op === "change_password") {
 } else if ($op === "disable_2fa") {
   $id = (int)($_POST["id"] ?? 0);
   if ($id <= 0) json_out(["ok"=>false,"error"=>"Invalid id"]);
+  if (!can_target_admin($id, $useSb)) json_out(["ok"=>false,"error"=>"Unauthorized"]);
   if ($useSb) {
     $r = sb_patch("users", ["two_factor_enabled"=>false, "two_factor_secret"=>null], ["id"=>"eq.".$id]);
     json_out(["ok"=>$r!==null]);
@@ -97,6 +120,7 @@ if ($op === "change_password") {
 } else if ($op === "login_history") {
   $id = (int)($_GET["id"] ?? 0);
   if ($id <= 0) json_out(["ok"=>false,"error"=>"Invalid id"]);
+  if (!can_target_admin($id, $useSb)) json_out(["ok"=>false,"error"=>"Unauthorized"]);
   $items = $useSb ? (sb_get("login_history", ["select"=>"id,at,ip,user_agent,success,reason", "user_id"=>"eq.".$id, "limit"=>50, "order"=>"at.desc"]) ?: []) : [];
   json_out(["ok"=>true, "items"=>$items]);
 } else {

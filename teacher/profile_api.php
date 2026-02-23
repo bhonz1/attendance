@@ -14,33 +14,6 @@ if (!$capSess || !is_string($cap) || !hash_equals($capSess, $cap)) {
 }
 $tid = $_SESSION["teacher_id"] ?? null;
 if (!$tid) { echo json_encode(["ok"=>false,"error"=>"Unauthorized"]); exit; }
-$useSb = sb_url() ? true : false;
-$pw = null;
-if ($useSb) {
-  $r = sb_get("teacher_registry", ["select"=>"password_enc", "id"=>"eq.".$tid, "limit"=>1]);
-  if (is_array($r) && isset($r[0])) {
-    $cipher = $r[0]["password_enc"] ?? "";
-    if (is_string($cipher) && strlen($cipher)) {
-      $secret = getenv("TEACHER_PW_SECRET") ?: "";
-      if (strpos($cipher, ":") !== false && $secret) {
-        $parts = explode(":", $cipher, 2);
-        $iv = base64_decode($parts[0], true);
-        $ct = base64_decode($parts[1], true);
-        if ($iv !== false && $ct !== false) {
-          $key = hash("sha256", $secret, true);
-          $dec = openssl_decrypt($ct, "AES-256-CBC", $key, OPENSSL_RAW_DATA, $iv);
-          if ($dec !== false) $pw = $dec;
-        }
-      } else {
-        $pw = $cipher;
-      }
-    }
-  }
-}
-if ($pw) {
-  unset($_SESSION["captcha_code"]);
-  echo json_encode(["ok"=>true,"password"=>$pw]);
-} else {
-  echo json_encode(["ok"=>false,"error"=>"Unavailable"]);
-}
+unset($_SESSION["captcha_code"]);
+echo json_encode(["ok"=>false,"error"=>"Password reveal disabled"]);
 exit;

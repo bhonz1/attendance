@@ -107,10 +107,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $alert = ["type"=>"danger","text"=>"Invalid form submission."];
   } else {
     $remarkSn = $_POST["remark_sn"] ?? "";
-    $remarkDate = $_POST["remark_date"] ?? "";
+    $remarkSn = is_string($remarkSn) ? preg_replace('/[^0-9A-Za-z\\-]/', '', $remarkSn) : "";
+    $remarkDate = trim((string)($_POST["remark_date"] ?? ""));
     $remarkText = trim((string)($_POST["remark_text"] ?? ""));
+    if (strlen($remarkText) > 500) $remarkText = substr($remarkText, 0, 500);
     if ($remarkSn !== "" && $remarkDate !== "" && $code !== "") {
-      if ($useSb) {
+      if (!isset($studentMap[$remarkSn])) {
+        $alert = ["type"=>"danger","text"=>"Invalid student"];
+      } else if (!preg_match("/^\\d{4}-\\d{2}-\\d{2}$/", $remarkDate)) {
+        $alert = ["type"=>"danger","text"=>"Invalid date"];
+      } else if ($useSb) {
         $upd = sb_patch("class_attendances", ["remarks"=>$remarkText], ["class_code"=>"eq.".$code, "student_number"=>"eq.".$remarkSn, "date"=>"eq.".$remarkDate]);
         if ($upd === null) {
           $alert = ["type"=>"danger","text"=>"Save remark failed"];
@@ -235,7 +241,8 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <div class="section-title">Students</div>
-            <a class="btn btn-light btn-sm add-student-btn" href="/teacher/add_student.php?class=<?= urlencode((string)$cid) ?>&return=<?= rawurlencode('/teacher/classes.php?class=' . (string)$cid) ?>" title="Add Student" aria-label="Add Student">
+            <?php $tokAdd = url_ref_create(["class"=>(string)$cid]); ?>
+            <a class="btn btn-light btn-sm add-student-btn" href="/teacher/add_student.php?ref=<?= htmlspecialchars($tokAdd) ?>" title="Add Student" aria-label="Add Student">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true">
                 <path d="M8 3v10M3 8h10"></path>
               </svg>

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . "/../lib/admin.php";
 require_once __DIR__ . "/../lib/supabase.php";
+require_once __DIR__ . "/../lib/urlref.php";
 require_admin_session();
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 $msgSchedule = $_SESSION["__schedule_msg"] ?? null;
@@ -47,7 +48,7 @@ if ($method === "POST" && (isset($_POST["op"]) && $_POST["op"] === "reveal_passw
 if ($method === "POST" && isset($_POST["schedule_action"])) {
   require_once __DIR__ . "/../lib/csrf.php";
   $tk = $_POST["csrf"] ?? "";
-  if (!csrf_validate($tk)) { http_redirect("/admin/view_teacher.php?id=" . urlencode($_POST["teacher_id"] ?? "")); }
+  if (!csrf_validate($tk)) { $tok = url_ref_create(["id"=> (string)($_POST["teacher_id"] ?? "") ]); http_redirect("/admin/view_teacher.php?ref=" . $tok); }
   $act = $_POST["schedule_action"];
   $sid = $_POST["id"] ?? "";
   $tid = $_POST["teacher_id"] ?? "";
@@ -215,10 +216,20 @@ if ($method === "POST" && isset($_POST["schedule_action"])) {
       $_SESSION["__schedule_err"] = $baseMsg . $extra;
     }
   }
-  http_redirect("/admin/view_teacher.php?id=" . urlencode($tid));
+  $tok = url_ref_create(["id"=> (string)$tid ]);
+  http_redirect("/admin/view_teacher.php?ref=" . $tok);
 }
 $useSupabase = sb_url() ? true : false;
 $id = $_GET["id"] ?? "";
+$refTok = $_GET["ref"] ?? "";
+if ($refTok !== "") {
+  $ref = url_ref_consume($refTok);
+  if (is_array($ref)) {
+    $rid = $ref["id"] ?? "";
+    if (is_string($rid)) $id = preg_replace('/[^0-9A-Za-z_\\-]/', '', $rid);
+  }
+}
+if (is_string($id)) $id = preg_replace('/[^0-9A-Za-z_\\-]/', '', $id);
 $record = null;
 $classes = [];
 $syOptions = $useSupabase ? sb_get("school_years", ["select" => "id,code,description,start_date,end_date", "order" => "id.desc"]) : ($_SESSION["__school_years_meta"] ?? []);

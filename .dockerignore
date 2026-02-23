@@ -1,0 +1,9 @@
+.git
+web/node_modules
+web/.next
+uploads
+.env
+.DS_Store
+web/.env
+node_modules
+npm-debug.log

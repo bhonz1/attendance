@@ -1,14 +1,21 @@
 <?php
 require_once __DIR__ . "/../lib/admin.php";
 require_once __DIR__ . "/../lib/supabase.php";
+require_once __DIR__ . "/../lib/csrf.php";
 require_admin_session();
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 $useSupabase = sb_url() ? true : false;
 $msgSy = null; $errSy = null;
 $msgCollege = null; $errCollege = null;
 $msgInst = null; $errInst = null;
+$csrf_token = csrf_token();
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
   $action = $_POST["action"];
+  if (!csrf_validate($_POST["csrf"] ?? "")) {
+    if (strpos($action, "sy_") === 0) $errSy = "Invalid form submission.";
+    else if (strpos($action, "college_") === 0) $errCollege = "Invalid form submission.";
+    else if (strpos($action, "inst_") === 0) $errInst = "Invalid form submission.";
+  } else {
   if ($action === "sy_create") {
     $code = trim($_POST["code"] ?? ""); $desc = trim($_POST["description"] ?? "");
     $start = $_POST["start_date"] ?? ""; $end = $_POST["end_date"] ?? "";
@@ -291,6 +298,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
         }
       }
     }
+  }
 }
 }
 $syList = $useSupabase ? sb_get("school_years", ["select"=>"id,code,description,start_date,end_date","order"=>"id.desc"]) : ($_SESSION["__school_years_meta"] ?? []);
@@ -342,6 +350,7 @@ if (!is_array($institutions)) $institutions = [];
             <td><?= htmlspecialchars($row["end_date"] ?? "—") ?></td>
             <td>
               <form method="post" class="d-inline">
+                <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
                 <input type="hidden" name="action" value="sy_delete">
                 <input type="hidden" name="id" value="<?= htmlspecialchars((string)($row["id"] ?? "")) ?>">
                 <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
@@ -350,6 +359,7 @@ if (!is_array($institutions)) $institutions = [];
               <div class="modal fade" id="syEditModal<?= htmlspecialchars((string)($row["id"] ?? "")) ?>" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title">Edit School Year</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                 <form method="post"><div class="modal-body">
+                  <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
                   <input type="hidden" name="action" value="sy_update">
                   <input type="hidden" name="id" value="<?= htmlspecialchars((string)($row["id"] ?? "")) ?>">
                   <div class="mb-2"><label class="form-label">Code</label><input class="form-control" name="code" value="<?= htmlspecialchars($row["code"] ?? "") ?>" required></div>
@@ -380,6 +390,7 @@ if (!is_array($institutions)) $institutions = [];
                 <td><?= htmlspecialchars($row["description"] ?? "") ?></td>
                 <td>
                   <form method="post" class="d-inline">
+                    <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
                     <input type="hidden" name="action" value="inst_delete">
                     <input type="hidden" name="id" value="<?= htmlspecialchars((string)($row["id"] ?? "")) ?>">
                     <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
@@ -388,6 +399,7 @@ if (!is_array($institutions)) $institutions = [];
                   <div class="modal fade" id="inEditModal<?= htmlspecialchars((string)($row["id"] ?? "")) ?>" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><div class="modal-content">
                     <div class="modal-header"><h5 class="modal-title">Edit Institution</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                     <form method="post"><div class="modal-body">
+                      <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
                       <input type="hidden" name="action" value="inst_update">
                       <input type="hidden" name="id" value="<?= htmlspecialchars((string)($row["id"] ?? "")) ?>">
                       <div class="mb-2"><label class="form-label">Description</label><input class="form-control" name="description" value="<?= htmlspecialchars($row["description"] ?? "") ?>" required></div>
@@ -415,6 +427,7 @@ if (!is_array($institutions)) $institutions = [];
                 <td><?= htmlspecialchars($row["description"] ?? "") ?></td>
                 <td>
                   <form method="post" class="d-inline">
+                    <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
                     <input type="hidden" name="action" value="college_delete">
                     <input type="hidden" name="id" value="<?= htmlspecialchars((string)($row["id"] ?? "")) ?>">
                     <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
@@ -423,6 +436,7 @@ if (!is_array($institutions)) $institutions = [];
                   <div class="modal fade" id="coEditModal<?= htmlspecialchars((string)($row["id"] ?? "")) ?>" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><div class="modal-content">
                     <div class="modal-header"><h5 class="modal-title">Edit College</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                     <form method="post"><div class="modal-body">
+                      <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
                       <input type="hidden" name="action" value="college_update">
                       <input type="hidden" name="id" value="<?= htmlspecialchars((string)($row["id"] ?? "")) ?>">
                       <div class="mb-2"><label class="form-label">Description</label><input class="form-control" name="description" value="<?= htmlspecialchars($row["description"] ?? "") ?>" required></div>
@@ -441,6 +455,7 @@ if (!is_array($institutions)) $institutions = [];
 <div class="modal fade" id="syCreateModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><div class="modal-content">
   <div class="modal-header"><h5 class="modal-title">Add School Year</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
   <form method="post"><div class="modal-body">
+    <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
     <input type="hidden" name="action" value="sy_create">
     <div class="mb-2"><label class="form-label">Code</label><input class="form-control" name="code" required></div>
     <div class="mb-2"><label class="form-label">Description</label><input class="form-control" name="description" required></div>
@@ -451,6 +466,7 @@ if (!is_array($institutions)) $institutions = [];
 <div class="modal fade" id="coCreateModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><div class="modal-content">
   <div class="modal-header"><h5 class="modal-title">Add College</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
   <form method="post"><div class="modal-body">
+    <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
     <input type="hidden" name="action" value="college_create">
     <div class="mb-2"><label class="form-label">Description</label><input class="form-control" name="description" required></div>
   </div><div class="modal-footer"><button type="submit" class="btn btn-primary btn-sm">Add</button></div></form>
@@ -458,6 +474,7 @@ if (!is_array($institutions)) $institutions = [];
 <div class="modal fade" id="inCreateModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><div class="modal-content">
   <div class="modal-header"><h5 class="modal-title">Add Institution</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
   <form method="post"><div class="modal-body">
+    <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
     <input type="hidden" name="action" value="inst_create">
     <div class="mb-2"><label class="form-label">Description</label><input class="form-control" name="description" required></div>
   </div><div class="modal-footer"><button type="submit" class="btn btn-primary btn-sm">Add</button></div></form>

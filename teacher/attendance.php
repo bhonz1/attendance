@@ -87,7 +87,10 @@ if ($code !== "") {
     });
   }
 }
-$dateSel = $_POST["date"] ?? ($_GET["date"] ?? date("Y-m-d"));
+$dateSel = (string)($_POST["date"] ?? ($_GET["date"] ?? date("Y-m-d")));
+if (!preg_match("/^\\d{4}-\\d{2}-\\d{2}$/", $dateSel) || !DateTime::createFromFormat("Y-m-d", $dateSel)) {
+  $dateSel = date("Y-m-d");
+}
 $statusBySn = [];
 if ($useSb && $code !== "" && $dateSel !== "") {
   $rows = sb_get("class_attendances", ["select"=>"student_number,status,remarks", "class_code"=>"eq.".$code, "date"=>"eq.".$dateSel]);
@@ -114,30 +117,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   if (!csrf_validate($tok)) {
     $alert = ["type"=>"danger","text"=>"Invalid form submission."];
   } else {
-    $dateVal = $_POST["date"] ?? "";
-    $st = $_POST["status"] ?? [];
-    $applyHolidayAll = isset($_POST["holiday_day"]);
-    $applyPresentAll = isset($_POST["all_present"]) && !$applyHolidayAll;
-    $payload = [];
-    $missingNums = [];
-    foreach ($students as $s) {
-      static $rowIdx = 0; $rowIdx++;
-      $sn = (string)($s["student_number"] ?? "");
-      if ($sn === "") continue;
-      $chosen = "";
-      if ($applyHolidayAll) {
-        $chosen = "Holiday";
-      } else if ($applyPresentAll) {
-        $chosen = "Present";
-      } else {
-        $vals = isset($st[$sn]) ? (is_array($st[$sn]) ? $st[$sn] : [$st[$sn]]) : [];
-        foreach ($vals as $v) { $vv = trim((string)$v); if ($vv !== "") { $chosen = $vv; break; } }
-        if ($chosen === "") { $missingNums[] = $rowIdx; }
-      }
-      if ($dateVal !== "" && $chosen !== "") {
-        $payload[] = ["class_code"=>$code, "student_number"=>$sn, "date"=>$dateVal, "status"=>$chosen];
-      }
+    $dateVal = trim((string)($_POST["date"] ?? ""));
+    if (!preg_match("/^\\d{4}-\\d{2}-\\d{2}$/", $dateVal) || !DateTime::createFromFormat("Y-m-d", $dateVal)) {
+      $alert = ["type"=>"danger","text"=>"Invalid date"];
     }
+    if (!isset($alert)) {
+      $st = $_POST["status"] ?? [];
+      $applyHolidayAll = isset($_POST["holiday_day"]);
+      $applyPresentAll = isset($_POST["all_present"]) && !$applyHolidayAll;
+      $payload = [];
+      $missingNums = [];
+      $allowedStatuses = ["Present","Absent","Tardy","Holiday"];
+      foreach ($students as $s) {
+        static $rowIdx = 0; $rowIdx++;
+        $sn = (string)($s["student_number"] ?? "");
+        if ($sn === "") continue;
+        $chosen = "";
+        if ($applyHolidayAll) {
+          $chosen = "Holiday";
+        } else if ($applyPresentAll) {
+          $chosen = "Present";
+        } else {
+          $vals = isset($st[$sn]) ? (is_array($st[$sn]) ? $st[$sn] : [$st[$sn]]) : [];
+          foreach ($vals as $v) {
+            $vv = trim((string)$v);
+            if ($vv !== "" && in_array($vv, $allowedStatuses, true)) { $chosen = $vv; break; }
+          }
+          if ($chosen === "") { $missingNums[] = $rowIdx; }
+        }
+        if ($dateVal !== "" && $chosen !== "" && in_array($chosen, $allowedStatuses, true)) {
+          $payload[] = ["class_code"=>$code, "student_number"=>$sn, "date"=>$dateVal, "status"=>$chosen];
+        }
+      }
     if (!$applyHolidayAll && !$applyPresentAll && count($missingNums) > 0) {
       $alert = ["type"=>"warning","text"=>"There are " . count($missingNums) . " students without a status: " . implode(", ", $missingNums)];
     } else if (count($payload) > 0) {
@@ -200,6 +211,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       }
     } else {
       $alert = ["type"=>"warning","text"=>"No attendance to save."];
+    }
     }
   }
 }

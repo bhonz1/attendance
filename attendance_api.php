@@ -2,9 +2,12 @@
 require_once __DIR__ . "/lib/env.php";
 env_load();
 header("Content-Type: application/json");
-$month = isset($_GET["month"]) ? $_GET["month"] : date("Y-m");
-$start = DateTime::createFromFormat("Y-m-d", $month . "-01")->format("Y-m-01");
-$end = DateTime::createFromFormat("Y-m-d", $month . "-01")->format("Y-m-t");
+$month = isset($_GET["month"]) ? (string)$_GET["month"] : date("Y-m");
+if (!preg_match("/^\\d{4}-\\d{2}$/", $month)) $month = date("Y-m");
+$monthDate = DateTime::createFromFormat("Y-m-d", $month . "-01");
+if (!$monthDate) $monthDate = new DateTime("first day of this month");
+$start = $monthDate->format("Y-m-01");
+$end = $monthDate->format("Y-m-t");
 $supabaseUrl = getenv("SUPABASE_URL");
 $supabaseKey = getenv("SUPABASE_ANON_KEY") ?: getenv("SUPABASE_PUBLISHABLE_KEY");
 function getJson($url, $headers) {

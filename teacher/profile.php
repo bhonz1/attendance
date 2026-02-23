@@ -143,19 +143,6 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
             <div class="field-label">Password</div>
             <div class="pass-view">
               <span id="pwMask"><?= htmlspecialchars($profile["password_mask"]) ?></span>
-              <button id="pwToggle" type="button" class="btn btn-warning btn-sm" title="View" aria-label="View" data-state="view">
-                <span class="eye-icon" id="eyeOpen">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                    <path d="M8 3.5c-4.2 0-7 4.1-7 4.5s2.8 4.5 7 4.5 7-4.1 7-4.5-2.8-4.5-7-4.5zM8 11.5c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4z"></path>
-                    <circle cx="8" cy="7.5" r="2.2"></circle>
-                  </svg>
-                </span>
-                <span class="eye-icon d-none" id="eyeClosed">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                    <path d="M1 8c0-.7 3.2-4.5 7-4.5 1.4 0 2.7.3 3.8.8l1.2-1.2 1 1-12 12-1-1 2.3-2.3C1.9 11 1 8.7 1 8z"></path>
-                  </svg>
-                </span>
-              </button>
             </div>
           </div>
           <div>
@@ -182,92 +169,9 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
     </div>
   </div>
 </main>
-<div class="modal fade" id="captchaModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Confirm to Reveal</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-2">Enter the captcha code to reveal your password.</div>
-        <div class="d-flex align-items-center gap-2 mb-2">
-          <span class="badge bg-light text-dark border" id="captchaChallenge">••••••</span>
-          <button id="captchaRefresh" type="button" class="btn btn-outline-secondary btn-sm">Refresh</button>
-        </div>
-        <input type="text" class="form-control" id="captchaInput" placeholder="Enter code">
-        <div id="captchaError" class="text-danger small mt-2 d-none">Invalid code. Try again.</div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" id="captchaConfirm">Verify & Reveal</button>
-      </div>
-    </div>
-  </div>
-</div>
 <footer class="text-center text-muted small py-3 border-top mt-auto">
   <div class="container">© 2026 Attendance Tracker | Developed by: Von P. Gabayan Jr.</div>
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-(function(){
-  var btn = document.getElementById("pwToggle");
-  var span = document.getElementById("pwMask");
-  var eyeOpen = document.getElementById("eyeOpen");
-  var eyeClosed = document.getElementById("eyeClosed");
-  var defaultMask = "***";
-  var pwLen = 0;
-  var modalEl = document.getElementById("captchaModal");
-  var modal = modalEl ? new bootstrap.Modal(modalEl) : null;
-  var challengeEl = document.getElementById("captchaChallenge");
-  var refreshBtn = document.getElementById("captchaRefresh");
-  var inputEl = document.getElementById("captchaInput");
-  var errorEl = document.getElementById("captchaError");
-  async function getChallenge(){
-    var p = new URLSearchParams();
-    p.set("csrf", "<?= htmlspecialchars(csrf_token()) ?>");
-    var r = await fetch("/teacher/captcha_api.php", { method:"POST", headers:{ "Content-Type":"application/x-www-form-urlencoded" }, body:p.toString() }).then(x=>x.json()).catch(()=>({ok:false}));
-    if (r && r.ok && r.challenge) { challengeEl.textContent = r.challenge; } else { challengeEl.textContent = "ERROR"; }
-  }
-  function setState(state){
-    btn.dataset.state = state;
-    if (state === "view") { eyeOpen.classList.remove("d-none"); eyeClosed.classList.add("d-none"); btn.title = "View"; btn.setAttribute("aria-label","View"); }
-    else { eyeOpen.classList.add("d-none"); eyeClosed.classList.remove("d-none"); btn.title = "Hide"; btn.setAttribute("aria-label","Hide"); }
-  }
-  if (btn && span && modal) {
-    setState("view");
-    btn.addEventListener("click", async function(){
-      var state = btn.dataset.state;
-      if (state === "view") {
-        errorEl.classList.add("d-none");
-        inputEl.value = "";
-        await getChallenge();
-        modal.show();
-      } else {
-        if (pwLen > 0) { span.textContent = "*".repeat(pwLen); } else { span.textContent = defaultMask; }
-        setState("view");
-      }
-    });
-    document.getElementById("captchaConfirm").addEventListener("click", async function(){
-      var code = inputEl.value.trim();
-      var p = new URLSearchParams();
-      p.set("csrf", "<?= htmlspecialchars(csrf_token()) ?>");
-      p.set("captcha", code);
-      var r = await fetch("/teacher/profile_api.php", { method:"POST", headers:{ "Content-Type":"application/x-www-form-urlencoded" }, body:p.toString() }).then(x=>x.json()).catch(()=>({ok:false}));
-      if (r && r.ok && r.password) {
-        span.textContent = r.password;
-        pwLen = (r.password || "").length;
-        setState("hide");
-        modal.hide();
-      } else {
-        errorEl.classList.remove("d-none");
-      }
-    });
-    refreshBtn.addEventListener("click", async function(){
-      await getChallenge();
-    });
-  }
-})();
-</script>
 </body>
 </html>

@@ -136,6 +136,7 @@ function login_teacher($username, $password) {
     return ["ok" => false, "error" => "Login failed"];
   }
   if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+  session_regenerate_id(true);
   $_SESSION["teacher_id"] = $t["id"];
   $_SESSION["teacher_email"] = $t["username"] ?? "";
   $_SESSION["teacher_name"] = $t["full_name"] ?? ($t["name"] ?? "");

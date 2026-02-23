@@ -232,7 +232,7 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
                       <td><?= htmlspecialchars($c["type"] ?? "") ?></td>
                       <td>
                         <?php require_once __DIR__ . "/../lib/urlref.php"; $vTok = url_ref_create(["class"=>(string)($c["id"] ?? "")]); ?>
-                        <a class="btn btn-light btn-sm add-student-btn action-btn" href="/teacher/add_student.php?class=<?= htmlspecialchars((string)($c["id"] ?? "")) ?>&return=<?= rawurlencode('/teacher/classes.php?ref=' . $vTok) ?>" title="Add Students" aria-label="Add Students">Add Students</a>
+                        <a class="btn btn-light btn-sm add-student-btn action-btn" href="/teacher/add_student.php?ref=<?= htmlspecialchars($vTok) ?>" title="Add Students" aria-label="Add Students">Add Students</a>
                         <a class="btn btn-light btn-sm view-btn action-btn" href="/teacher/classes.php?ref=<?= htmlspecialchars($vTok) ?>" title="View Class" aria-label="View Class">View Class</a>
                         <?php $aTok = url_ref_create(["class"=>(string)($c["id"] ?? "")]); ?>
                         <a class="btn btn-primary btn-sm action-btn" href="/teacher/attendance.php?ref=<?= htmlspecialchars($aTok) ?>" title="Attendance" aria-label="Attendance">Attendance</a>
