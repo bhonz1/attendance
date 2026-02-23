@@ -210,7 +210,7 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
         <div class="t-hero__title">Add Student</div>
       </div>
       <div class="d-flex align-items-center gap-2">
-        <a class="btn btn-outline-light btn-sm" href="/teacher/dashboard.php">Back</a>
+        <a class="btn btn-outline-light btn-sm" href="/teacher/dashboard">Back</a>
       </div>
     </div>
   </div>

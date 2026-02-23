@@ -13,7 +13,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $p = (string)($_POST["password"] ?? "");
     $r = login_teacher($u, $p);
     if (is_array($r) && ($r["ok"] ?? false)) {
-      http_redirect("/teacher/dashboard.php");
+      http_redirect("/teacher/dashboard");
     } else {
       $err = is_array($r) ? ($r["error"] ?? "Login failed") : "Login failed";
     }
@@ -44,7 +44,7 @@ unset($_SESSION["__flash_error"]);
         <div class="login-hero__subtitle">Access your teacher dashboard</div>
       </div>
       <div>
-        <a href="/index.php" class="btn btn-light btn-sm">Back</a>
+        <a href="/index" class="btn btn-light btn-sm">Back</a>
       </div>
     </div>
   </div>

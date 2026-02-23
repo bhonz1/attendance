@@ -323,7 +323,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["reg_action"])) {
   <td>
     <div class="d-flex gap-2">
       <?php require_once __DIR__ . "/../lib/urlref.php"; $vtok = url_ref_create(["id"=>$rid]); ?>
-      <a class="btn btn-sm btn-view" href="/admin/view_teacher.php?ref=<?= htmlspecialchars($vtok) ?>">View</a>
+      <a class="btn btn-sm btn-view" href="/admin/view-teacher?ref=<?= htmlspecialchars($vtok) ?>">View</a>
       <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#trEditModal_<?= $rid ?>">Edit</button>
       <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#trDeleteModal_<?= $rid ?>">Delete</button>
     </div>

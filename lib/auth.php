@@ -191,7 +191,7 @@ function require_teacher_session() {
   if (!isset($_SESSION["teacher_id"])) {
     if (php_sapi_name() !== "cli") {
       $_SESSION["__flash_error"] = "unauthorized";
-      http_redirect("/teacher/login.php");
+      http_redirect("/teacher/login");
     }
     return;
   }
@@ -202,7 +202,7 @@ function require_teacher_session() {
       logout_teacher();
       if (php_sapi_name() !== "cli") {
         $_SESSION["__flash_error"] = "unauthorized";
-        http_redirect("/teacher/login.php");
+        http_redirect("/teacher/login");
       }
       return;
     }

@@ -234,9 +234,9 @@ body {
     </div>
     <div class="content">
       <div class="cta" role="navigation" aria-label="Primary navigation">
-        <a class="btn btn-mark" data-loading href="/student.php" aria-label="Open Student Registration">Student</a>
-        <a class="btn btn-teacher" data-loading href="/teacher/Login.php" aria-label="Open Teacher Portal">Teacher</a>
-        <a class="btn btn-admin" data-loading href="/admin/login.php" aria-label="Open Admin Portal">Admin</a>
+        <a class="btn btn-mark" data-loading href="/student" aria-label="Open Student Registration">Student</a>
+        <a class="btn btn-teacher" data-loading href="/teacher/login" aria-label="Open Teacher Portal">Teacher</a>
+        <a class="btn btn-admin" data-loading href="/admin/login" aria-label="Open Admin Portal">Admin</a>
       </div>
     </div>
     <div class="footer">

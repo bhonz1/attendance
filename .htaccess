@@ -19,6 +19,7 @@ RewriteRule ^teacher/classes$ teacher/classes.php [L,QSA]
 RewriteRule ^teacher/attendance$ teacher/attendance.php [L,QSA]
 RewriteRule ^teacher/add-student$ teacher/add_student.php [L,QSA]
 RewriteRule ^teacher/view-student$ teacher/view_student.php [L,QSA]
+RewriteRule ^teacher/profile$ teacher/profile.php [L,QSA]
 
 RewriteRule ^teacher/classes/ref/([A-Za-z0-9]+)$ teacher/classes.php?ref=$1 [L,QSA]
 RewriteRule ^teacher/attendance/ref/([A-Za-z0-9]+)$ teacher/attendance.php?ref=$1 [L,QSA]
@@ -27,7 +28,10 @@ RewriteRule ^teacher/add-student/ref/([A-Za-z0-9]+)$ teacher/add_student.php?ref
 RewriteRule ^admin/login$ admin/login.php [L,QSA]
 RewriteRule ^admin/logout$ admin/logout.php [L,QSA]
 RewriteRule ^admin/dashboard$ admin/dashboard.php [L,QSA]
+RewriteRule ^admin/setting$ admin/setting.php [L,QSA]
 RewriteRule ^admin/teacher$ admin/teacher.php [L,QSA]
+RewriteRule ^admin/profile$ admin/profile.php [L,QSA]
+RewriteRule ^admin/school-year$ admin/school_year.php [L,QSA]
 RewriteRule ^admin/view-teacher$ admin/view_teacher.php [L,QSA]
 RewriteRule ^admin/view-teacher/ref/([A-Za-z0-9]+)$ admin/view_teacher.php?ref=$1 [L,QSA]
 

@@ -4,7 +4,7 @@ require_once __DIR__ . "/../lib/roles.php";
 require_once __DIR__ . "/../lib/csrf.php";
 require_auth_at_most(ROLE_SUPERADMIN, "/admin/login.php");
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-if (get_auth_id() !== ROLE_SUPERADMIN) { http_redirect("/admin/dashboard.php"); }
+if (get_auth_id() !== ROLE_SUPERADMIN) { http_redirect("/admin/dashboard"); }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -28,17 +28,17 @@ if (get_auth_id() !== ROLE_SUPERADMIN) { http_redirect("/admin/dashboard.php"); 
 <body class="d-flex flex-column min-vh-100">
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container-fluid">
-    <a class="navbar-brand" href="/superadmin/dashboard.php">Superadmin</a>
+    <a class="navbar-brand" href="/superadmin/dashboard">Superadmin</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#saNav" aria-controls="saNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="saNav">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item"><a class="nav-link active" aria-current="page" href="/superadmin/logs.php">Logs</a></li>
-        <li class="nav-item"><a class="nav-link" href="/superadmin/users.php">Users</a></li>
+        <li class="nav-item"><a class="nav-link active" aria-current="page" href="/superadmin/logs">Logs</a></li>
+        <li class="nav-item"><a class="nav-link" href="/superadmin/users">Users</a></li>
       </ul>
       <div class="d-flex">
-        <a class="btn btn-outline-light btn-sm" href="/admin/logout.php">Logout</a>
+        <a class="btn btn-outline-light btn-sm" href="/admin/logout">Logout</a>
       </div>
     </div>
   </div>

@@ -248,7 +248,7 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
         <div class="small opacity-75">Manage Attendance of your Class!</div>
       </div>
       <div>
-        <a class="btn btn-outline-light btn-sm" href="/teacher/dashboard.php">Back</a>
+        <a class="btn btn-outline-light btn-sm" href="/teacher/dashboard">Back</a>
       </div>
     </div>
   </div>
@@ -324,7 +324,7 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
         </div>
         <div class="d-flex justify-content-center gap-2 mt-3">
           <button type="submit" class="btn btn-save">Save Attendance</button>
-          <a class="btn btn-cancel" href="/teacher/dashboard.php">Cancel</a>
+          <a class="btn btn-cancel" href="/teacher/dashboard">Cancel</a>
         </div>
       </form>
     </div>

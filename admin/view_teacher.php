@@ -48,7 +48,7 @@ if ($method === "POST" && (isset($_POST["op"]) && $_POST["op"] === "reveal_passw
 if ($method === "POST" && isset($_POST["schedule_action"])) {
   require_once __DIR__ . "/../lib/csrf.php";
   $tk = $_POST["csrf"] ?? "";
-  if (!csrf_validate($tk)) { $tok = url_ref_create(["id"=> (string)($_POST["teacher_id"] ?? "") ]); http_redirect("/admin/view_teacher.php?ref=" . $tok); }
+  if (!csrf_validate($tk)) { $tok = url_ref_create(["id"=> (string)($_POST["teacher_id"] ?? "") ]); http_redirect("/admin/view-teacher?ref=" . $tok); }
   $act = $_POST["schedule_action"];
   $sid = $_POST["id"] ?? "";
   $tid = $_POST["teacher_id"] ?? "";
@@ -217,7 +217,7 @@ if ($method === "POST" && isset($_POST["schedule_action"])) {
     }
   }
   $tok = url_ref_create(["id"=> (string)$tid ]);
-  http_redirect("/admin/view_teacher.php?ref=" . $tok);
+  http_redirect("/admin/view-teacher?ref=" . $tok);
 }
 $useSupabase = sb_url() ? true : false;
 $id = $_GET["id"] ?? "";
@@ -292,7 +292,7 @@ if ($record) {
         <div>Details and subscription</div>
       </div>
       <div>
-        <a href="/admin/teacher.php" class="btn btn-light btn-sm">Back</a>
+        <a href="/admin/teacher" class="btn btn-light btn-sm">Back</a>
       </div>
     </div>
   </div>

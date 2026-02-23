@@ -107,7 +107,7 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
 <body class="min-vh-100 d-flex flex-column">
 <nav class="navbar navbar-expand-lg navbar-dark header">
   <div class="container-fluid">
-    <a class="navbar-brand" href="/student.php">Student Registration</a>
+    <a class="navbar-brand" href="/student">Student Registration</a>
     <div class="d-flex ms-auto">
       <a class="btn btn-light btn-sm" href="/">Back</a>
     </div>
@@ -130,7 +130,7 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
                   <?php foreach ($errors as $e): ?><div><?= htmlspecialchars($e) ?></div><?php endforeach; ?>
                 </div>
               <?php endif; ?>
-              <form method="post" action="/student.php" novalidate>
+              <form method="post" action="/student" novalidate>
                 <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
                 <div class="row g-3">
                   <div class="col-12 col-md-4 col-lg-3">

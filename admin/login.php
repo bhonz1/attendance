@@ -4,25 +4,25 @@ require_once __DIR__ . "/../lib/roles.php";
 require_once __DIR__ . "/../lib/csrf.php";
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 $rid = get_auth_id();
-if ($rid === ROLE_SUPERADMIN) { http_redirect("/superadmin/dashboard.php"); }
+if ($rid === ROLE_SUPERADMIN) { http_redirect("/superadmin/dashboard"); }
 $prefill = trim($_POST["username"] ?? "");
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
   if (!csrf_validate($_POST["csrf"] ?? "")) {
     if (session_status() !== PHP_SESSION_ACTIVE) session_start();
     $_SESSION["__flash_error"] = "Invalid request";
-    http_redirect("/admin/login.php");
+    http_redirect("/admin/login");
   }
   $u = trim($_POST["username"] ?? "");
   $p = $_POST["password"] ?? "";
   $res = admin_login($u, $p);
   if ($res["ok"]) {
     $role = get_auth_id();
-    if ($role === ROLE_SUPERADMIN) { http_redirect("/superadmin/dashboard.php"); }
-    http_redirect("/admin/dashboard.php");
+    if ($role === ROLE_SUPERADMIN) { http_redirect("/superadmin/dashboard"); }
+    http_redirect("/admin/dashboard");
   }
   if (session_status() !== PHP_SESSION_ACTIVE) session_start();
   $_SESSION["__flash_error"] = $res["error"] ?? "Unauthorized";
-  http_redirect("/admin/login.php");
+  http_redirect("/admin/login");
 }
 $error = isset($_SESSION["__flash_error"]) ? $_SESSION["__flash_error"] : null;
 if ($error !== null) unset($_SESSION["__flash_error"]);
@@ -50,7 +50,7 @@ if ($error !== null) unset($_SESSION["__flash_error"]);
         <div class="login-hero__subtitle">Access attendance administration</div>
       </div>
       <div>
-        <a href="/index.php" class="btn btn-light btn-sm">Back</a>
+        <a href="/index" class="btn btn-light btn-sm">Back</a>
       </div>
     </div>
   </div>

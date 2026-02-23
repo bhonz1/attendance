@@ -216,7 +216,7 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
         <div class="small opacity-75">Manage your Class Attendance!</div>
       </div>
       <div>
-        <a class="btn btn-outline-light btn-sm" href="/teacher/dashboard.php">Back</a>
+        <a class="btn btn-outline-light btn-sm" href="/teacher/dashboard">Back</a>
       </div>
     </div>
   </div>
@@ -242,7 +242,7 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
           <div class="d-flex justify-content-between align-items-center mb-2">
             <div class="section-title">Students</div>
             <?php $tokAdd = url_ref_create(["class"=>(string)$cid]); ?>
-            <a class="btn btn-light btn-sm add-student-btn" href="/teacher/add_student.php?ref=<?= htmlspecialchars($tokAdd) ?>" title="Add Student" aria-label="Add Student">
+            <a class="btn btn-light btn-sm add-student-btn" href="/teacher/add-student?ref=<?= htmlspecialchars($tokAdd) ?>" title="Add Student" aria-label="Add Student">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true">
                 <path d="M8 3v10M3 8h10"></path>
               </svg>
@@ -252,7 +252,7 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
             <ol class="mb-0 ps-3">
               <?php foreach ($students as $i => $s): ?>
                 <?php $tok = url_ref_create(["class"=>(string)$cid,"student"=>(string)($s["student_number"] ?? "")]); ?>
-                <li><a href="/teacher/classes.php?ref=<?= htmlspecialchars($tok) ?>"><?= htmlspecialchars($s["full_name"] ?? ($s["name"] ?? "")) ?></a></li>
+                <li><a href="/teacher/classes?ref=<?= htmlspecialchars($tok) ?>"><?= htmlspecialchars($s["full_name"] ?? ($s["name"] ?? "")) ?></a></li>
               <?php endforeach; ?>
             </ol>
           <?php else: ?>
@@ -268,7 +268,7 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
             <div class="section-title monitoring-title mb-0">Attendance Monitoring</div>
             <div class="d-flex align-items-center gap-2">
               <?php $tokAll = url_ref_create(["class"=>(string)$cid]); ?>
-              <a class="btn btn-light btn-sm btn-view-all" href="/teacher/classes.php?ref=<?= htmlspecialchars($tokAll) ?>">View All</a>
+              <a class="btn btn-light btn-sm btn-view-all" href="/teacher/classes?ref=<?= htmlspecialchars($tokAll) ?>">View All</a>
             </div>
           </div>
           <?php if ($monitorSN !== ""): ?>

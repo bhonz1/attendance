@@ -13,7 +13,7 @@ require_admin_session();
 <body class="d-flex flex-column min-vh-100">
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container-fluid">
-    <a class="navbar-brand" href="/admin/dashboard.php">Admin</a>
+    <a class="navbar-brand" href="/admin/dashboard">Admin</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminTopNav" aria-controls="adminTopNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -21,15 +21,15 @@ require_admin_session();
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <?php $rid = get_auth_id(); ?>
         <?php if ($rid !== null && $rid === ROLE_SUPERADMIN): ?>
-          <li class="nav-item"><a class="nav-link" href="/superadmin/users.php">Users</a></li>
-          <li class="nav-item"><a class="nav-link" href="/superadmin/logs.php">Logs</a></li>
+          <li class="nav-item"><a class="nav-link" href="/superadmin/users">Users</a></li>
+          <li class="nav-item"><a class="nav-link" href="/superadmin/logs">Logs</a></li>
         <?php endif; ?>
-        <li class="nav-item"><a class="nav-link" href="/admin/teacher.php">Teachers</a></li>
-        <li class="nav-item"><a class="nav-link" href="/admin/school_year.php">School Year</a></li>
-        <li class="nav-item"><a class="nav-link" href="/admin/profile.php">Profile</a></li>
+        <li class="nav-item"><a class="nav-link" href="/admin/teacher">Teachers</a></li>
+        <li class="nav-item"><a class="nav-link" href="/admin/school-year">School Year</a></li>
+        <li class="nav-item"><a class="nav-link" href="/admin/profile">Profile</a></li>
       </ul>
       <div class="d-flex">
-        <a class="btn btn-outline-light btn-sm" href="/admin/logout.php">Logout</a>
+        <a class="btn btn-outline-light btn-sm" href="/admin/logout">Logout</a>
       </div>
     </div>
   </div>
