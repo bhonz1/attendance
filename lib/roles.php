@@ -4,9 +4,20 @@ const ROLE_SUPERADMIN = 0;
 const ROLE_ADMIN = 1;
 const ROLE_TEACHER = 2;
 function http_base_url() {
-  $https = (!empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off");
+  $envBase = getenv("APP_BASE_URL");
+  if (is_string($envBase) && $envBase !== "") return rtrim($envBase, "/");
+  $proto = $_SERVER["HTTP_X_FORWARDED_PROTO"] ?? $_SERVER["HTTP_X_FORWARDED_PROTOCOL"] ?? $_SERVER["HTTP_X_FORWARDED_SCHEME"] ?? null;
+  if (is_string($proto) && strpos($proto, ",") !== false) $proto = trim(explode(",", $proto)[0]);
+  $https = (!empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off") || (is_string($proto) && strtolower($proto) === "https");
   $scheme = $https ? "https" : "http";
-  $host = $_SERVER["HTTP_HOST"] ?? "localhost:8000";
+  $host = $_SERVER["HTTP_X_FORWARDED_HOST"] ?? $_SERVER["HTTP_HOST"] ?? "localhost:8000";
+  if (is_string($host) && strpos($host, ",") !== false) $host = trim(explode(",", $host)[0]);
+  $port = $_SERVER["HTTP_X_FORWARDED_PORT"] ?? null;
+  if (is_string($port) && strpos($port, ",") !== false) $port = trim(explode(",", $port)[0]);
+  if (is_string($port) && $port !== "" && is_string($host) && strpos($host, ":") === false) {
+    $isDefault = ($scheme === "https" && $port === "443") || ($scheme === "http" && $port === "80");
+    if (!$isDefault) $host .= ":" . $port;
+  }
   return $scheme . "://" . $host;
 }
 function http_redirect($path, $status = null) {
