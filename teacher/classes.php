@@ -3,12 +3,22 @@ require_once __DIR__ . "/../lib/auth.php";
 require_once __DIR__ . "/../lib/supabase.php";
 require_once __DIR__ . "/../lib/csrf.php";
 require_teacher_session();
+require_once __DIR__ . "/../lib/urlref.php";
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 $csrf_token = csrf_token();
 $tid = $_SESSION["teacher_id"] ?? null;
 $name = $_SESSION["teacher_name"] ?? "Teacher";
 $useSb = sb_url() ? true : false;
 $cid = $_GET["class"] ?? ($_GET["id"] ?? "");
+$cid = is_string($cid) ? preg_replace('/[^0-9]/', '', $cid) : $cid;
+$refTok = $_GET["ref"] ?? "";
+if ($refTok !== "") {
+  $ref = url_ref_consume($refTok);
+  if (is_array($ref)) {
+    $cid = $ref["class"] ?? $cid;
+    if (isset($ref["student"])) $_GET["student"] = $ref["student"];
+  }
+}
 $classRec = null;
 if ($cid !== "" && $useSb) {
   $r = sb_get("class_schedule", ["select"=>"id,subject_description,time,day,room,class,class_code,type,schoolyear_id,teacher_id", "id"=>"eq.".$cid, "limit"=>1]);
@@ -81,6 +91,7 @@ if ($code !== "") {
   }
 }
 $selectedSn = $_GET["student"] ?? "";
+$selectedSn = is_string($selectedSn) ? preg_replace('/[^0-9A-Za-z\\-]/', '', $selectedSn) : $selectedSn;
 $studentMap = [];
 foreach ($students as $s) { $studentMap[(string)($s["student_number"] ?? "")] = $s; }
 $monitorSN = "";
@@ -233,7 +244,8 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
           <?php if (is_array($students) && count($students)>0): ?>
             <ol class="mb-0 ps-3">
               <?php foreach ($students as $i => $s): ?>
-                <li><a href="/teacher/classes.php?class=<?= urlencode((string)$cid) ?>&student=<?= urlencode((string)($s["student_number"] ?? "")) ?>"><?= htmlspecialchars($s["full_name"] ?? ($s["name"] ?? "")) ?></a></li>
+                <?php $tok = url_ref_create(["class"=>(string)$cid,"student"=>(string)($s["student_number"] ?? "")]); ?>
+                <li><a href="/teacher/classes.php?ref=<?= htmlspecialchars($tok) ?>"><?= htmlspecialchars($s["full_name"] ?? ($s["name"] ?? "")) ?></a></li>
               <?php endforeach; ?>
             </ol>
           <?php else: ?>
@@ -248,7 +260,8 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
           <div class="d-flex justify-content-between align-items-center mb-2">
             <div class="section-title monitoring-title mb-0">Attendance Monitoring</div>
             <div class="d-flex align-items-center gap-2">
-              <a class="btn btn-light btn-sm btn-view-all" href="/teacher/classes.php?class=<?= urlencode((string)$cid) ?>">View All</a>
+              <?php $tokAll = url_ref_create(["class"=>(string)$cid]); ?>
+              <a class="btn btn-light btn-sm btn-view-all" href="/teacher/classes.php?ref=<?= htmlspecialchars($tokAll) ?>">View All</a>
             </div>
           </div>
           <?php if ($monitorSN !== ""): ?>

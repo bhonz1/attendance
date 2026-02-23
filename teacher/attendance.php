@@ -2,12 +2,21 @@
 require_once __DIR__ . "/../lib/auth.php";
 require_once __DIR__ . "/../lib/supabase.php";
 require_once __DIR__ . "/../lib/csrf.php";
+require_once __DIR__ . "/../lib/urlref.php";
 require_teacher_session();
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 $tid = $_SESSION["teacher_id"] ?? null;
 $name = $_SESSION["teacher_name"] ?? "Teacher";
 $useSb = sb_url() ? true : false;
 $cid = $_GET["class"] ?? ($_GET["id"] ?? "");
+$cid = is_string($cid) ? preg_replace('/[^0-9]/', '', $cid) : $cid;
+$refTok = $_GET["ref"] ?? "";
+if ($refTok !== "") {
+  $ref = url_ref_consume($refTok);
+  if (is_array($ref)) {
+    $cid = $ref["class"] ?? $cid;
+  }
+}
 $classRec = null;
 if ($cid !== "" && $useSb) {
   $r = sb_get("class_schedule", ["select"=>"id,subject_description,time,day,room,class,class_code,type,schoolyear_id,teacher_id", "id"=>"eq.".$cid, "limit"=>1]);

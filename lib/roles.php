@@ -13,6 +13,14 @@ function http_redirect($path, $status = null) {
   $target = $path;
   if (strpos($path, "http://") !== 0 && strpos($path, "https://") !== 0) {
     $target = http_base_url() . (strpos($path, "/") === 0 ? $path : ("/" . $path));
+  } else {
+    $cur = http_base_url();
+    $pu = parse_url($path);
+    $ph = $pu["host"] ?? "";
+    $ch = parse_url($cur, PHP_URL_HOST) ?: "";
+    if (strcasecmp($ph, $ch) !== 0) {
+      $target = $cur;
+    }
   }
   if ($status === null) {
     $m = strtoupper($_SERVER["REQUEST_METHOD"] ?? "GET");
