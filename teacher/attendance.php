@@ -8,7 +8,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 $tid = $_SESSION["teacher_id"] ?? null;
 $name = $_SESSION["teacher_name"] ?? "Teacher";
 $useSb = sb_url() ? true : false;
-$cid = $_GET["class"] ?? ($_GET["id"] ?? "");
+$cid = $_POST["class"] ?? ($_GET["class"] ?? ($_GET["id"] ?? ""));
 $cid = is_string($cid) ? preg_replace('/[^0-9]/', '', $cid) : $cid;
 $refTok = $_GET["ref"] ?? "";
 if ($refTok !== "") {
@@ -112,6 +112,7 @@ if ($useSb && $code !== "" && $dateSel !== "") {
   }
 }
 $alert = null;
+$didSave = false;
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
   $tok = $_POST["csrf"] ?? "";
   if (!csrf_validate($tok)) {
@@ -175,6 +176,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $statusBySn = [];
                 foreach ($payload as $r) { $statusBySn[(string)$r["student_number"]] = ["status"=>$r["status"], "remarks"=>""]; }
                 $bj = null; $code = null;
+                $didSave = true;
               }
             }
             if ($code === 409) {
@@ -198,6 +200,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           $alert = ["type"=>"success","text"=>"Attendance saved"];
           $statusBySn = [];
           foreach ($payload as $r) { $statusBySn[(string)$r["student_number"]] = ["status"=>$r["status"], "remarks"=>""]; }
+          $didSave = true;
         }
       } else {
         if (!isset($_SESSION["__attendance"]) || !is_array($_SESSION["__attendance"])) $_SESSION["__attendance"] = [];
@@ -208,12 +211,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $alert = ["type"=>"success","text"=>"Attendance saved"];
         $statusBySn = [];
         foreach ($payload as $r) { $statusBySn[(string)$r["student_number"]] = ["status"=>$r["status"], "remarks"=>""]; }
+        $didSave = true;
       }
     } else {
       $alert = ["type"=>"warning","text"=>"No attendance to save."];
     }
     }
   }
+}
+if ($didSave && $cid !== "") {
+  $tok = url_ref_create(["class"=>(string)$cid]);
+  http_redirect("/teacher/classes.php?ref=" . $tok);
 }
 $csrf_token = csrf_token();
 ?><!DOCTYPE html>
@@ -276,6 +284,7 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
           <div class="alert alert-<?= htmlspecialchars($alert["type"]) ?>" role="alert"><?= htmlspecialchars($alert["text"]) ?></div>
         <?php endif; ?>
         <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
+        <input type="hidden" name="class" value="<?= htmlspecialchars((string)$cid) ?>">
         <div class="row g-2 mb-3">
           <div class="col-auto"><label class="form-label">Date</label></div>
           <div class="col-auto"><input type="date" class="form-control" name="date" value="<?= htmlspecialchars($dateSel) ?>"></div>

@@ -106,6 +106,84 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   if (!csrf_validate($tok)) {
     $alert = ["type"=>"danger","text"=>"Invalid form submission."];
   } else {
+    if (isset($_POST["delete_student_sn"])) {
+      $delSn = preg_replace('/[^0-9A-Za-z\\-]/', '', (string)($_POST["delete_student_sn"] ?? ""));
+      if ($delSn === "" || !isset($studentMap[$delSn])) {
+        $alert = ["type"=>"danger","text"=>"Invalid student"];
+      } else {
+        $hasAtt = false;
+        if ($useSb) {
+          $check = sb_get("class_attendances", ["select"=>"id", "class_code"=>"eq.".$code, "student_number"=>"eq.".$delSn, "limit"=>1]);
+          $hasAtt = is_array($check) && count($check) > 0;
+          if ($hasAtt) {
+            $alert = ["type"=>"warning","text"=>"Cannot delete student with attendance records"];
+          } else {
+            $del = sb_delete("class_students", ["class_code"=>"eq.".$code, "student_number"=>"eq.".$delSn]);
+            if ($del !== null) {
+              $alert = ["type"=>"success","text"=>"Student removed"];
+              $students = array_values(array_filter($students, function($s) use ($delSn){
+                return (string)($s["student_number"] ?? "") !== (string)$delSn;
+              }));
+              unset($studentMap[$delSn]);
+              if ($monitorSN === $delSn) { $monitorSN = ""; $monitorName = ""; $attendanceRows = []; $attendanceBySn = []; }
+            } else {
+              $alert = ["type"=>"danger","text"=>"Delete failed"];
+            }
+          }
+        } else {
+          $rows = $_SESSION["__attendance"] ?? [];
+          foreach ($rows as $r) {
+            if ((string)($r["class_code"] ?? "") === (string)$code && (string)($r["student_number"] ?? "") === (string)$delSn) { $hasAtt = true; break; }
+          }
+          if ($hasAtt) {
+            $alert = ["type"=>"warning","text"=>"Cannot delete student with attendance records"];
+          } else {
+            if (isset($_SESSION["__class_students"]) && is_array($_SESSION["__class_students"])) {
+              $_SESSION["__class_students"] = array_values(array_filter($_SESSION["__class_students"], function($row) use ($code, $delSn){
+                return !((string)($row["class_code"] ?? "") === (string)$code && (string)($row["student_number"] ?? "") === (string)$delSn);
+              }));
+            }
+            $students = array_values(array_filter($students, function($s) use ($delSn){
+              return (string)($s["student_number"] ?? "") !== (string)$delSn;
+            }));
+            unset($studentMap[$delSn]);
+            if ($monitorSN === $delSn) { $monitorSN = ""; $monitorName = ""; $attendanceRows = []; $attendanceBySn = []; }
+            $alert = ["type"=>"success","text"=>"Student removed"];
+          }
+        }
+      }
+    } else if (isset($_POST["delete_attendance_date"])) {
+      $delDate = trim((string)($_POST["delete_attendance_date"] ?? ""));
+      if (!preg_match("/^\\d{4}-\\d{2}-\\d{2}$/", $delDate)) {
+        $alert = ["type"=>"danger","text"=>"Invalid date"];
+      } else {
+        if ($useSb) {
+          $del = sb_delete("class_attendances", ["class_code"=>"eq.".$code, "date"=>"eq.".$delDate]);
+          if ($del !== null) {
+            $alert = ["type"=>"success","text"=>"Attendance deleted"];
+            $attendanceRows = array_values(array_filter($attendanceRows, function($r) use ($delDate){ return (string)($r["date"] ?? "") !== (string)$delDate; }));
+            if ($selectedSn !== "") {
+              if (!isset($attendanceBySn[$selectedSn])) $attendanceBySn[$selectedSn] = ["full_name"=>$monitorName,"rows"=>[]];
+              $attendanceBySn[$selectedSn]["rows"] = array_values(array_filter($attendanceBySn[$selectedSn]["rows"], function($r) use ($delDate){ return (string)($r["date"] ?? "") !== (string)$delDate; }));
+            }
+          } else {
+            $alert = ["type"=>"danger","text"=>"Delete failed"];
+          }
+        } else {
+          if (isset($_SESSION["__attendance"]) && is_array($_SESSION["__attendance"])) {
+            $_SESSION["__attendance"] = array_values(array_filter($_SESSION["__attendance"], function($row) use ($code, $delDate){
+              return !((string)($row["class_code"] ?? "") === (string)$code && (string)($row["date"] ?? "") === (string)$delDate);
+            }));
+          }
+          $attendanceRows = array_values(array_filter($attendanceRows, function($r) use ($delDate){ return (string)($r["date"] ?? "") !== (string)$delDate; }));
+          if ($selectedSn !== "") {
+            if (!isset($attendanceBySn[$selectedSn])) $attendanceBySn[$selectedSn] = ["full_name"=>$monitorName,"rows"=>[]];
+            $attendanceBySn[$selectedSn]["rows"] = array_values(array_filter($attendanceBySn[$selectedSn]["rows"], function($r) use ($delDate){ return (string)($r["date"] ?? "") !== (string)$delDate; }));
+          }
+          $alert = ["type"=>"success","text"=>"Attendance deleted"];
+        }
+      }
+    } else {
     $remarkSn = $_POST["remark_sn"] ?? "";
     $remarkSn = is_string($remarkSn) ? preg_replace('/[^0-9A-Za-z\\-]/', '', $remarkSn) : "";
     $remarkDate = trim((string)($_POST["remark_date"] ?? ""));
@@ -140,6 +218,30 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       }
     } else {
       $alert = ["type"=>"warning","text"=>"Incomplete remark details"];
+    }
+    }
+  }
+}
+$statusBySn = [];
+if ($code !== "") {
+  if ($useSb) {
+    $rows = sb_get("class_attendances", ["select"=>"student_number,status", "class_code"=>"eq.".$code, "order"=>"date.desc"]);
+    if (is_array($rows)) {
+      foreach ($rows as $r) {
+        $sn = (string)($r["student_number"] ?? "");
+        if ($sn !== "" && !isset($statusBySn[$sn]) && isset($r["status"])) $statusBySn[$sn] = (string)$r["status"];
+      }
+    }
+  } else {
+    $rows = $_SESSION["__attendance"] ?? [];
+    if (is_array($rows)) {
+      $sorted = $rows;
+      usort($sorted, function($a,$b){ return strcmp((string)($b["date"] ?? ""), (string)($a["date"] ?? "")); });
+      foreach ($sorted as $r) {
+        if ((string)($r["class_code"] ?? "") !== (string)$code) continue;
+        $sn = (string)($r["student_number"] ?? "");
+        if ($sn !== "" && !isset($statusBySn[$sn]) && isset($r["status"])) $statusBySn[$sn] = (string)$r["status"];
+      }
     }
   }
 }
@@ -200,6 +302,9 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
 .add-student-btn:hover { background-color:var(--yellow); border-color:var(--yellow); color:#111827; }
 .add-student-btn svg { width:16px; height:16px; }
 .add-student-btn svg path { fill:#000000; stroke:#000000; stroke-width:1.5; }
+.btn-delete { background-color:#ef4444; border-color:#ef4444; color:#ffffff; }
+.btn-delete:hover { background-color:#dc2626; border-color:#dc2626; color:#ffffff; }
+.student-actions { display:flex; gap:6px; align-items:center; }
 .details-table td:nth-child(2), .details-table td:nth-child(4) { font-weight: 700; }
 .btn-view-all { background-color:#ffffff; border-color:#e5e7eb; color:#111827; }
 .btn-view-all:hover { background-color:var(--yellow); border-color:var(--yellow); color:#111827; }
@@ -241,12 +346,19 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <div class="section-title">Students</div>
-            <?php $tokAdd = url_ref_create(["class"=>(string)$cid]); ?>
-            <a class="btn btn-light btn-sm add-student-btn" href="/teacher/add-student?ref=<?= htmlspecialchars($tokAdd) ?>" title="Add Student" aria-label="Add Student">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true">
-                <path d="M8 3v10M3 8h10"></path>
-              </svg>
-            </a>
+            <div class="student-actions">
+              <?php $tokAdd = url_ref_create(["class"=>(string)$cid]); ?>
+              <a class="btn btn-light btn-sm add-student-btn" href="/teacher/add-student?ref=<?= htmlspecialchars($tokAdd) ?>" title="Add Student" aria-label="Add Student">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M8 3v10M3 8h10"></path>
+                </svg>
+              </a>
+              <button type="button" class="btn btn-delete btn-sm" data-bs-toggle="modal" data-bs-target="#deleteStudentModal" title="Remove Student" aria-label="Remove Student">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 7h2v8h-2v-8Zm4 0h2v8h-2v-8ZM7 10h2v8H7v-8Z"></path>
+                </svg>
+              </button>
+            </div>
           </div>
           <?php if (is_array($students) && count($students)>0): ?>
             <ol class="mb-0 ps-3">
@@ -288,12 +400,23 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
                         <td>
                           <div class="d-flex align-items-center gap-2">
                             <span class="text-muted"><?= htmlspecialchars($r["remarks"] ?? "") ?></span>
-                            <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#remarkModal" data-sn="<?= htmlspecialchars((string)($r["student_number"] ?? "")) ?>" data-date="<?= htmlspecialchars((string)($r["date"] ?? "")) ?>">+</button>
+                            <?php $isAbsent = strtolower((string)($r["status"] ?? "")) === "absent"; ?>
+                            <?php if ($isAbsent): ?>
+                              <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#remarkModal" data-sn="<?= htmlspecialchars((string)($r["student_number"] ?? "")) ?>" data-date="<?= htmlspecialchars((string)($r["date"] ?? "")) ?>">+</button>
+                            <?php endif; ?>
                           </div>
                         </td>
-                         <td>
-                           
-                         </td>
+                        <td>
+                          <form method="post" class="m-0">
+                            <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
+                            <input type="hidden" name="delete_attendance_date" value="<?= htmlspecialchars((string)($r["date"] ?? "")) ?>">
+                            <button type="submit" class="btn btn-delete btn-sm" title="Delete Attendance" aria-label="Delete Attendance">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 7h2v8h-2v-8Zm4 0h2v8h-2v-8ZM7 10h2v8H7v-8Z"></path>
+                              </svg>
+                            </button>
+                          </form>
+                        </td>
                       </tr>
                     <?php endforeach; ?>
                   <?php else: ?>
@@ -331,11 +454,22 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
                           <td>
                             <div class="d-flex align-items-center gap-2">
                               <span class="text-muted"><?= htmlspecialchars($r["remarks"] ?? "") ?></span>
-                              <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#remarkModal" data-sn="<?= htmlspecialchars((string)($r["student_number"] ?? "")) ?>" data-date="<?= htmlspecialchars((string)($r["date"] ?? "")) ?>">+</button>
+                              <?php $isAbsent = strtolower((string)($r["status"] ?? "")) === "absent"; ?>
+                              <?php if ($isAbsent): ?>
+                                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#remarkModal" data-sn="<?= htmlspecialchars((string)($r["student_number"] ?? "")) ?>" data-date="<?= htmlspecialchars((string)($r["date"] ?? "")) ?>">+</button>
+                              <?php endif; ?>
                             </div>
                           </td>
                           <td>
-                            
+                            <form method="post" class="m-0">
+                              <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
+                              <input type="hidden" name="delete_attendance_date" value="<?= htmlspecialchars((string)($r["date"] ?? "")) ?>">
+                              <button type="submit" class="btn btn-delete btn-sm" title="Delete Attendance" aria-label="Delete Attendance">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                                  <path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 7h2v8h-2v-8Zm4 0h2v8h-2v-8ZM7 10h2v8H7v-8Z"></path>
+                                </svg>
+                              </button>
+                            </form>
                           </td>
                         </tr>
                       <?php endforeach; ?>
@@ -370,6 +504,37 @@ body { min-height:100vh; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff
   <div class="container">© 2026 Attendance Tracker | Developed by: Von P. Gabayan Jr.</div>
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<div class="modal fade" id="deleteStudentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Remove Student</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form method="post">
+          <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf_token) ?>">
+          <div class="mb-2">
+            <label class="form-label">Student</label>
+            <select class="form-select" name="delete_student_sn" required>
+              <option value="" selected disabled>Select student</option>
+              <?php foreach ($students as $s): ?>
+                <option value="<?= htmlspecialchars((string)($s["student_number"] ?? "")) ?>">
+                  <?= htmlspecialchars($s["full_name"] ?? ($s["name"] ?? "")) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="text-muted small mb-3">Students with attendance records cannot be removed.</div>
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-delete">Delete</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="modal fade" id="remarkModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-sm">
     <div class="modal-content">
